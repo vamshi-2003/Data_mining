@@ -1,13 +1,15 @@
 #include<bits/stdc++.h>
 using namespace std;
+int global_id = 0;
 class TrieNode {
 public:
     string item;
     int count;
+    int id;
     unordered_map<string, TrieNode*> children;
     bool isEndOfWord;
 
-    TrieNode(const string& item) : item(item), isEndOfWord(false),count(0) {}
+    TrieNode(const string& item) : item(item), isEndOfWord(false),count(0),id(global_id++) {}
 };
 
 class Trie {
@@ -121,7 +123,8 @@ public:
         return new_transactions;
     }
 
-    void print_trie(TrieNode* node, const string& prefix = "", bool isLast = true) {
+};
+void print_trie(TrieNode* node, const string& prefix = "", bool isLast = true) {
         if (!node) return;
 
         // Print the current node
@@ -134,8 +137,30 @@ public:
             print_trie(it->second, prefix + (isLast ? "    " : "│   "), lastChild);
         }
     }
-};
+void generate_dot(TrieNode* node, ofstream& out) {
+    if (!node) return;
+    
+    for (auto& child : node->children) {
+        out << "\"" 
+            << "Id:" << node->id << "\\n" // First line: ID
+            <<"Name:"<< node->item << "\\n"        // Second line: Item
+            << "Freq:" << node->count     // Third line: Frequency
+            << "\" -> \"" 
+            << "Id:" << child.second->id << "\\n" // First line: ID
+            <<"Name:"<< child.second->item << "\\n"        // Second line: Item
+            << "Freq:" << child.second->count     // Third line: Frequency
+            << "\";" << endl;
 
+        generate_dot(child.second, out);
+    }
+}
+void export_to_dot(TrieNode* root, const string& filename) {
+    ofstream out(filename);
+    out << "digraph Trie {" << endl;
+    generate_dot(root, out);
+    out << "}" << endl;
+    out.close();
+}
 int main() {
     // Sample transactions
     vector<Transaction> transactions = {
@@ -156,7 +181,7 @@ int main() {
         Transaction({ "I1", "I2", "I8", "I10" })
     };
 
-    int minSupport = 2;
+    int minSupport = 5;
 
     // Create Fp_growth object and build the tree
     Fp_growth fp(transactions, minSupport);
@@ -164,7 +189,15 @@ int main() {
 
     // Print the Trie structure
     cout << "Trie structure:\n";
-    fp.print_trie(root);
+    print_trie(root);
+    export_to_dot(root, "trie.dot");
+    //running bash command
+    int result = system("dot -Tpng trie.dot -o trie.png");
 
+    if (result == 0) {
+        cout << "Trie successfully exported to trie.png" << endl;
+    } else {
+        cout << "Error: Failed to generate the PNG image." << endl;
+    }
     return 0;
 }
