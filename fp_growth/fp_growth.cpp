@@ -181,7 +181,7 @@ int main() {
         Transaction({ "I1", "I2", "I8", "I10" })
     };
 
-    int minSupport = 5;
+    int minSupport = 3;
 
     // Create Fp_growth object and build the tree
     Fp_growth fp(transactions, minSupport);
